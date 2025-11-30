@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code Game – Initiation Protocol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #020617 0, #000 55%, #020617 100%);
+      color: #e5e7eb;
+      overflow-x: hidden;
+    }
+
+    /* Matrix Background */
+    #matrix-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      opacity: 0.3;
+    }
+
+    /* Scanlines */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(15, 23, 42, 0.35),
+          rgba(15, 23, 42, 0.35) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      mix-blend-mode: soft-light;
+      z-index: -1;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3.5rem 1.5rem;
+    }
+
+    /* EINZIGE BOX – jetzt 100% Breite */
+    .panel {
+      max-width: 880px;
+      width: 100%;
+      margin: 0 auto;
+      position: relative;
+      border-radius: 24px;
+      padding: 2.5rem;
+      background: radial-gradient(circle at top left, rgba(22, 163, 74, 0.08), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      box-shadow:
+        0 0 30px rgba(22, 163, 74, 0.35),
+        0 20px 40px rgba(0, 0, 0, 0.9);
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: -70%;
+      background:
+        conic-gradient(from 180deg, rgba(34, 197, 94, 0.2), transparent, rgba(56, 189, 248, 0.3), transparent);
+      opacity: 0.9;
+      animation: panelGlow 16s linear infinite;
+    }
+
+    @keyframes panelGlow {
+      to { transform: rotate(360deg); }
+    }
+
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      color: #9ca3af;
+      margin-bottom: 1.2rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e 0, #16a34a 45%, transparent 100%);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+      animation: pulse 1.9s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 3rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #bbf7d0;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Glitch */
+    .glitch {
+      position: relative;
+      display: inline-block;
+      text-shadow:
+        0 0 4px rgba(34, 197, 94, 0.8),
+        0 0 12px rgba(56, 189, 248, 0.9);
+      animation: glitchMain 2s infinite alternate;
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.75;
+      mix-blend-mode: screen;
+    }
+
+    .glitch::before { color:#22c55e; transform:translate(-2px,-1px); }
+    .glitch::after { color:#38bdf8; transform:translate(2px, 1px); }
+
+    @keyframes glitchMain {
+      0%, 19%, 61%, 100% { opacity: 1; }
+      20%, 60% { opacity: 0.45; }
+    }
+
+    .subtitle {
+      font-family: ui-monospace, monospace;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #9ca3af;
+      margin-bottom: 1.3rem;
+    }
+
+    /* Typewriter */
+    .type-line {
+      font-family: ui-monospace, monospace;
+      font-size: 0.9rem;
+      color: #22c55e;
+      margin-bottom: 1.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      background-color: #22c55e;
+      margin-left: 3px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Textbereich */
+    .story {
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 1.8rem;
+    }
+
+    .story p + p {
+      margin-top: 0.8rem;
+    }
+
+    .story strong {
+      color: #bef264;
+    }
+
+    .story-highlight {
+      margin-top: 1rem;
+      padding: 0.8rem 0.9rem;
+      border-radius: 12px;
+      border: 1px dashed rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      font-size: 0.9rem;
+    }
+
+    .story-highlight .label {
+      font-family: ui-monospace, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Button */
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.8);
+      background: radial-gradient(circle at top, #22c55e, #16a34a);
+      color: #022c16;
+      text-decoration: none;
+      font-family: ui-monospace, monospace;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      box-shadow:
+        0 0 20px rgba(22, 163, 74, 0.8),
+        0 14px 30px rgba(0,0,0,0.9);
+      transition: transform 0.1s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .primary-btn span.icon {
+      font-size: 1.2rem;
+    }
+
+    /* Scroll Hint */
+    .scroll-hint {
+      position: fixed;
+      left: 50%;
+      bottom: 1.4rem;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.7rem;
+      color: #6b7280;
+      font-family: ui-monospace, monospace;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .scroll-hint-icon {
+      width: 18px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scroll-hint-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #9ca3af;
+      left: 50%;
+      top: 5px;
+      transform: translateX(-50%);
+      animation: scrollDot 1.6s infinite;
+    }
+
+    @keyframes scrollDot {
+      0% {opacity:1; transform:translate(-50%,0);}
+      70% {opacity:0; transform:translate(-50%,10px);}
+      100% {opacity:0;}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-bg"></canvas>
+
+  <div class="page">
+    <section class="panel">
+      <div class="panel-inner">
+        <div class="badge-row">
+          <div class="badge">
+            <span class="badge-dot"></span>
+            <span>SESSION: INITIATION</span>
+          </div>
+          <div class="badge">
+            PROTOCOL: <span style="color:#22c55e;">ONLINE</span>
+          </div>
+        </div>
+
+        <h1 class="glitch" data-text="CODE GAME">CODE GAME</h1>
+        <p class="subtitle">INITIATION PROTOCOL // READ BEFORE ACCESS</p>
+
+        <div class="type-line" id="type-line"><span class="cursor"></span></div>
+
+        <!-- ====== HIER DEIN TEXT ====== -->
+        <div class="story">
+          <p>
+            Willkommen <strong>Linnea</strong>. Ich will ein Spiel mit dir spielen. 
+            Ich hoffe du bereit für eine Herausforderung, das ganze wird nicht ganz so einfach.
+            Trotzdem bin ich zuversichtlich, dass du es schaffen wirst. Du bist ja schließlich nicht dumm oder? ... oder?
+          </p>
+          <p>
+            Dein Ziel: Codes finden
+          </p>
+
+          <p>
+            Du bekommst Bilder und Hinweise zur Verfügung gestellt, begebe dich zum Ort und finde den sechsstelligen Code, Scan den QR-Code erneut und gib den gefundenen Code ein um ins nächste Level zu gelangen. Die Hinweise helfen dir bei der Suche, mach dich auf was gefasst. Du wirst dich bewegen müssen, du wirst nachdenken müssen und du wirst suchen müssen.
+            Gedult ist der Schlüssel zum Erfolg, doch manchmal braucht es nun mal mehr als Zeit um etwas für sich zu gewinnen. Mal schauen was du so drauf hast.
+          </p>
+            
+
+          <p>
+
+          </p>
+
+            
+
+          
+        <!-- ====== / HIER DEIN TEXT ====== -->
+
+        <div class="actions">
+          <a href="Level1_X6D5M3.html" class="primary-btn">
+            <span class="icon">▶</span>
+            <span>Level 1 betreten</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-hint-icon"><div class="scroll-hint-dot"></div></div>
+    scroll
+  </div>
+
+  <script>
+    // typewriter
+    const typeLineEl = document.getElementById("type-line");
+    const typeText = ">> Initialisiere Spielumgebung ... Lies die Instruktionen, dann betrete Level 1.";
+    let i = 0;
+    function typeWrite() {
+      const cursor = '<span class="cursor"></span>';
+      typeLineEl.innerHTML = typeText.slice(0, i) + cursor;
+      if (i++ < typeText.length) setTimeout(typeWrite, 20 + Math.random() * 40);
+    }
+    typeWrite();
+
+    // matrix effect
+    const canvas = document.getElementById("matrix-bg");
+    const ctx = canvas.getContext("2d");
+    const chars = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&?";
+
+    let w, h, col, drops;
+    function init() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      w = canvas.width;
+      h = canvas.height;
+      col = Math.floor(w / 16);
+      drops = Array(col).fill(1);
+    }
+
+    function draw() {
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "16px monospace";
+
+      for (let i = 0; i < col; i++) {
+        const t = chars[Math.floor(Math.random()*chars.length)];
+        ctx.fillText(t, i*16, drops[i]*16);
+        if (drops[i]*16 > h && Math.random() > 0.96) drops[i] = 0;
+        drops[i]++;
+      }
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", init);
+    init();
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>

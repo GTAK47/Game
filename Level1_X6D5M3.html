@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Level 1 – Fragmentierte Signale</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui, sans-serif; }
+
+    body {
+      min-height:100vh;
+      background:radial-gradient(circle at top, #020617 0, #000 55%, #020617 100%);
+      color:#e5e7eb;
+      overflow-x:hidden;
+    }
+
+    /* Matrix Background */
+    #matrix-bg {
+      position:fixed; inset:0; z-index:-2; opacity:.28;
+    }
+
+    /* Scanlines */
+    body::before {
+      content:"";
+      position:fixed; inset:0;
+      background:repeating-linear-gradient(to bottom,
+        rgba(15,23,42,.35), rgba(15,23,42,.35) 1px,
+        transparent 1px, transparent 3px);
+      mix-blend-mode:soft-light;
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    /* Page */
+    .page {
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:3.5rem 1.5rem;
+    }
+
+    /* Main Panel */
+    .panel {
+      width:100%; max-width:1000px;
+      background:radial-gradient(circle at top left, rgba(22,163,74,.1), rgba(15,23,42,.96));
+      border-radius:24px;
+      border:1px solid rgba(55,65,81,.9);
+      padding:2.5rem;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 0 30px rgba(22,163,74,.35), 0 20px 40px rgba(0,0,0,.9);
+    }
+
+    .panel::before {
+      content:"";
+      position:absolute;
+      inset:-70%;
+      background:conic-gradient(from 180deg, rgba(34,197,94,.2), transparent, rgba(56,189,248,.3), transparent);
+      animation:spin 16s linear infinite;
+      opacity:.7;
+    }
+
+    @keyframes spin { to { transform:rotate(360deg);} }
+
+    .panel-inner { position:relative; z-index:1; }
+
+    /* Badge Header */
+    .badge-row {
+      display:flex; justify-content:space-between; align-items:center;
+      font-family:ui-monospace, monospace;
+      font-size:.75rem; color:#9ca3af;
+      margin-bottom:1.3rem;
+    }
+
+    .badge {
+      display:flex; align-items:center; gap:.45rem;
+      padding:.3rem .7rem;
+      border-radius:999px;
+      background:rgba(15,23,42,.95);
+      border:1px solid rgba(55,65,81,.9);
+    }
+
+    .badge-dot {
+      width:8px; height:8px; border-radius:999px;
+      background:radial-gradient(circle,#22c55e,#16a34a);
+      animation:pulse 2s infinite;
+      box-shadow:0 0 12px rgba(34,197,94,.9);
+    }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.4);} }
+
+    /* Title */
+    .level-title {
+      font-size:clamp(1.8rem,4vw,2.6rem);
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      margin-bottom:1.2rem;
+      color:#bbf7d0;
+    }
+
+    /* Glitch */
+    .glitch {
+      position:relative; display:inline-block;
+      text-shadow:0 0 4px rgba(34,197,94,.8), 0 0 12px rgba(56,189,248,.9);
+      animation:glitch 2s infinite alternate;
+    }
+    .glitch::before,
+    .glitch::after {
+      content:attr(data-text);
+      position:absolute; top:0; left:0;
+      opacity:.7; mix-blend-mode:screen;
+    }
+    .glitch::before { color:#22c55e; transform:translate(-2px,-1px); }
+    .glitch::after  { color:#38bdf8; transform:translate(2px,1px); }
+    @keyframes glitch { 0%,20%,60%,100%{opacity:1;} 21%,59%{opacity:.4;} }
+
+    /* Text */
+    .intro-text { font-size:1rem; line-height:1.7; margin-bottom:1.5rem; }
+    .intro-text strong { color:#bef264; }
+
+    .hint-box {
+      background:rgba(15,23,42,.95);
+      border:1px dashed rgba(75,85,99,.9);
+      padding:1rem;
+      border-radius:12px;
+      font-family:ui-monospace, monospace;
+      font-size:.9rem;
+      color:#9ca3af;
+      margin-bottom:1.5rem;
+    }
+
+    /* Image Grid — PURE IMAGES */
+    .image-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:1.2rem;
+      margin-top:1.4rem;
+    }
+
+    .image-card {
+      background:#0f172a;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(55,65,81,.9);
+      cursor:pointer;
+      transition:.25s;
+    }
+
+    .image-card:hover {
+      transform:translateY(-4px) scale(1.02);
+      border-color:#38bdf8;
+      box-shadow:0 0 18px rgba(56,189,248,.7);
+    }
+
+    .image-card img {
+      width:100%;
+      height:170px;
+      object-fit:cover;
+      filter:brightness(.85) saturate(.3);
+      transition:.2s;
+    }
+
+    .image-card:hover img {
+      filter:brightness(1.05) saturate(1);
+    }
+
+    /* Navigation */
+    .nav-links {
+      margin-top:2rem;
+      font-family:ui-monospace, monospace;
+      font-size:.9rem;
+    }
+
+    .nav-links a {
+      color:#38bdf8;
+      text-decoration:none;
+      border-bottom:1px dotted #38bdf8;
+      padding-bottom:2px;
+    }
+
+    .nav-links a:hover { color:#7dd3fc; }
+  </style>
+</head>
+
+<body>
+
+<canvas id="matrix-bg"></canvas>
+
+<div class="page">
+  <section class="panel">
+    <div class="panel-inner">
+
+      <div class="badge-row">
+        <div class="badge"><span class="badge-dot"></span> LEVEL 01 ACTIVE</div>
+        <div class="badge">MODE: <span style="color:#22c55e;">SCAN</span></div>
+      </div>
+
+      <h1 class="level-title glitch" data-text="Level 1">
+        LEVEL 1
+    </h1>
+
+      <div class="intro-text">
+        <p>
+          Willkommen zu deinem ersten Test 
+        </p>
+        <p>
+          Wien ist eine schöne Stadt findest du nicht? I
+          
+        </p>
+        <p>
+          Die Informationen, die du brauchst, wirst du erst im nächsten Schritt eingeben können.
+        </p>
+      </div>
+
+      <div class="hint-box">
+        Hinweise:
+        <br>• Der Code befindet sich auf einer Bank
+        <br>• Interpretiere Formen, Muster oder Stimmungen.
+        <br>• Wanna fuck J*st*ne ???
+      </div>
+
+      <!-- PURE IMAGES -->
+      <div class="image-grid">
+        <div class="image-card">
+          <img src="Kev.jpg" alt="Fragment A">
+        </div>
+
+        <div class="image-card">
+          <img src="ka.jpg" alt="Fragment B">
+        </div>
+
+        <div class="image-card">
+          <img src="Dino.png" alt="Fragment C">
+        </div>
+
+        <div class="image-card">
+          <img src="Jonas.png" alt="Fragment D">
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a href="Gateway.html">&larr; Zurück zur Code-Seite</a>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+  /* Matrix background */
+  const canvas = document.getElementById("matrix-bg");
+  const ctx = canvas.getContext("2d");
+  const chars = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let columns, drops;
+
+  function initMatrix() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    columns = Math.floor(canvas.width / 16);
+    drops = Array(columns).fill(1);
+  }
+
+  function drawMatrix() {
+    ctx.fillStyle = "rgba(0,0,0,.07)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "#22c55e";
+    ctx.font = "16px monospace";
+
+    drops.forEach((y,i)=>{
+      let text = chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(text, i*16, y*16);
+      if(y*16 > canvas.height && Math.random() > .95) drops[i]=0;
+      drops[i]++;
+    });
+
+    requestAnimationFrame(drawMatrix);
+  }
+
+  initMatrix();
+  drawMatrix();
+  addEventListener("resize", initMatrix);
+</script>
+
+</body>
+</html>

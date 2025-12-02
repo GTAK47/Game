@@ -491,7 +491,7 @@
     </div>
   </div>
 
-  <!-- Level-Ansicht -->
+  <!-- Level-Ansicht (aktuell nicht benutzt, da wir weiterleiten) -->
   <div class="card hidden" id="level-section">
     <div class="card-inner">
       <div class="status-bar">
@@ -536,9 +536,14 @@
     // Einstellungen
     // ==========================
 
-    // HIER stellst du den richtigen Code ein:
-    // Nur Großbuchstaben und Zahlen, genau 6 Zeichen
-    const CORRECT_CODE = "X6D5M3";
+    // Hier definierst du alle Codes und zugehörigen Level/Zielseiten.
+    // Code IMMER 6 Zeichen, Großbuchstaben/Zahlen.
+    // Passe die Werte einfach an deine echten Dateinamen an.
+    const LEVEL_CODES = {
+      "X6D5M3": { level: 1, redirect: "TheStart.html" }, // Level 1
+      "150010": { level: 2, redirect: "Level2_150010.html" },   // Level 2
+      "Q9W8E7": { level: 3, redirect: "Level3.html" }    // Level 3 (Beispiel)
+    };
 
     // ==========================
     // DOM-Elemente holen
@@ -594,17 +599,23 @@
       attempts += 1;
       attemptInfo.textContent = "Attempts: " + attempts;
 
-     if (code === CORRECT_CODE) {
-  message.textContent = "Authentification successfull. Access granted.";
-  message.className = "message success";
-  
-  setTimeout(() => {
-    window.location.href = "TheStart.html"; // <-- Weiterleitung
-  }, 600);
-} else {
-  showError("ACCESS DENIED // Code incorrect.");
-  shake(loginSection);
-}
+      // Level anhand des Codes finden
+      const levelInfo = LEVEL_CODES[code];
+
+      if (levelInfo) {
+        // Korrekte Eingabe: Erfolgsmeldung + Weiterleitung zu passender Seite
+        const levelDisplay = levelInfo.level.toString().padStart(2, "0");
+        message.textContent = "Authentication successful. Access to Level " + levelDisplay + " granted.";
+        message.className = "message success";
+
+        setTimeout(() => {
+          window.location.href = levelInfo.redirect; // Weiterleitung zu spezifischer Level-Seite
+        }, 600);
+      } else {
+        // Falscher Code
+        showError("ACCESS DENIED // Code incorrect.");
+        shake(loginSection);
+      }
     });
 
     function showError(text) {
